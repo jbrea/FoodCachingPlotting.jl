@@ -1,7 +1,7 @@
 # FoodCachingPlotting
 
 The code in this repository defines some plotting methods to visualize the results of
-fitting and simulating food caching experiments. This repository is a submodule of [FoodCaching](../FoodCaching).
+fitting and simulating food caching experiments. This repository is a submodule of [FoodCaching](https://github.com/jbrea/FoodCaching).
 
 Run the [scripts](scripts) `fig1.jl`, `figappendix.jl` and `prediction.jl` to reproduce the figures in the paper.
 
