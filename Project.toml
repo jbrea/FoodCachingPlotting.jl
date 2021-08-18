@@ -33,7 +33,7 @@ PGFPlotsX = "1.2"
 PlotlyJS = "0.14"
 StatsBase = "0.33"
 Stipple = "0.11"
-StippleUI = "0.5"
+StippleUI = "0.5, 0.8"
 Unitful = "1.7"
 julia = "1.5"
 
