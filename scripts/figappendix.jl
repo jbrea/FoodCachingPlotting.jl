@@ -3,28 +3,31 @@ Pkg.activate(joinpath(@__DIR__, ".."))
 using PGFPlotsX, FoodCachingPlotting, DataFrames, DataFramesMeta
 import FoodCachingExperiments: bload, CLAYTON0103_EXPERIMENTS, EXPERIMENTS, summarize
 
-include(joinpath(@__DIR__, "paths.jl"))
+include(joinpath(@__DIR__, "utils.jl"))
 
 ###
 ### Appendix result figures
 ###
-results = bload(joinpath(datapath, "results"))[:results]
+results = bload(joinpath(datapath, "run_indi"))[:results]
 
 sort!(results, :logp_hat)
 best = combine(groupby(results, [:model, :experiment]),
                names(results) .=> x -> [last(x)], renamecols = false)
 
-for row in eachrow(best)
-    @show row.model row.experiment
-    f = plot_compare(row.experiment, row.avg, row.best, backend = :pgf)
-    if row.experiment == :Clayton0103
-        for (ei, fi) in zip(CLAYTON0103_EXPERIMENTS, f)
-            pgfsave(joinpath(figpath, "$(row.model)_$(ei).tikz"), fi)
-        end
-    else
-        pgfsave(joinpath(figpath, "$(row.model)_$(row.experiment).tikz"), f)
-    end
-end
+# n = 0
+# for row in eachrow(best)
+#     @show row.model row.experiment
+#     f = plot_compare(row.experiment, row.avg, row.best, backend = :pgf)
+#     if row.experiment == :Clayton0103
+#         for (ei, fi) in zip(CLAYTON0103_EXPERIMENTS, f)
+#             n += length(filter(x -> isa(x, TikzPicture), fi.elements)) ÷ 3
+# #             pgfsave(joinpath(figpath, "$(row.model)_$(ei).tikz"), fi)
+#         end
+#     else
+#         n += length(filter(x -> isa(x, TikzPicture), f.elements)) ÷ 3
+# #         pgfsave(joinpath(figpath, "$(row.model)_$(row.experiment).tikz"), f)
+#     end
+# end
 
 ###
 ### Appendix document
@@ -33,7 +36,14 @@ end
 length_without_missing(x) = sum(1 .- ismissing.(x))
 process_testval(val) = match(r"[0-9.]", string(val[1])) !== nothing ? "=" * val : val
 texstring(s) = reduce(replace, ["_" => " ", "&" => "\\&", "×" => "\$\\times\$"], init = string(s))
-figstring(m, s) = "\\begin{center}\\textbf{$m}\\end{center}\\input{$(m)_$s.tikz}"
+figstring(m, s) = "\\begin{center}\\textbf{$(modelname(m))}\\end{center}\\input{$(m)_$s.tikz}"
+function modelname(m)
+    m == "ReplayAndPlan" && return raw"\mplan{}"
+    m == "PlasticCaching" && return raw"\mplastic{}"
+    m == "MotivationalControl" && return raw"\mspec{}"
+    m == "EpisodicLikeMemory" && return raw"\mmem{}"
+    raw"\msimple{}"
+end
 function process_pval(val)
     pval = string(round(val, sigdigits = 2))
     m = match(r"(.*)e(.*)", pval)
@@ -76,8 +86,8 @@ function section(row)
     if row.comments != ""
         s *= "\\subsubsection*{Comments}\n$(texstring(row.comments))\n"
     end
-#     s *= "\\subsubsection*{Most Important Tests}\n"
-#     s *= join(texstring.(row.atests), "\\newline\n")
+    s *= "\\subsubsection*{Most Important Tests}\n"
+    s *= join(texstring.(row.atests), "\\newline\n")
     s *= "\\subsubsection*{Total Number of Statistics}\n$(row.ntests) p-values, $(row.nvals) means or sems.\n"
     s *= "\\subsubsection*{Figures}\\begin{center}"
     for model in ["Baseline", "MotivationalControl", "EpisodicLikeMemory",
@@ -92,7 +102,6 @@ summary = experiment_summary()
 summary = @transform summary ntotal = :ntests .+ :nvals
 summary = @transform summary nAtests = length.(:atests)
 
-include(joinpath(@__DIR__, "order.jl"))
 sort!(summary, :key, by = x -> findfirst(==(x), experiment_order))
 summary = join([section(summary[i, :]) for i in 1:nrow(summary)], "\n\n");
 open(joinpath(figpath, "experiment_summary.tex"), "w") do io

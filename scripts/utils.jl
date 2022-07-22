@@ -1,19 +1,13 @@
-datapath = joinpath(@__DIR__, "..", "data")
-figpath = joinpath(@__DIR__, "..", "figures")
+include(joinpath(@__DIR__, "paths.jl"))
+include(joinpath(@__DIR__, "order.jl"))
 
-experiment_order = [:Raby07_breakfastchoice, :Raby07_planningforbreakfast,
-                    :Cheke11_planning, :Correia07_exp2, :deKort07_exp2,
-                    :deKort07_exp3, :deKort07_exp4, :Clayton05_exp1,
-                    :Clayton05_exp2, :Clayton05_exp3, :Clayton05_exp4,
-                    :Clayton99A_exp1, :Clayton99A_exp2, :Clayton99B_exp1,
-                    :Clayton99B_exp2, :Clayton0103, :Clayton01_exp1,
-                    :Clayton01_exp2, :Clayton01_exp3, :Clayton01_exp4,
-                    :Clayton03_exp1, :Clayton03_exp2, :deKort05,
-                    :Cheke11_specsat, :Correia07_exp1, :Clayton99C_exp1,
-                    :Clayton99C_exp2, :Clayton99C_exp3, :Watanabe05,
-                    :deKort07_exp1]
-model_order = [:ReplayAndPlan, :PlasticCaching,
-               :EpisodicLikeMemory, :MotivationalControl, :Baseline]
+push!(PGFPlotsX.CUSTOM_PREAMBLE, raw"""
+\usepackage{xcolor}
+\definecolor{mblue}{HTML}{0992F2}
+\definecolor{morange}{HTML}{ff7f0e}
+\definecolor{mgreen}{HTML}{2ca02c}
+\definecolor{mred}{HTML}{d62728}
+""")
 
 function loadmodel(model, experiment, id, rev; datapath = datapath)
     load(joinpath(datapath, join([model, experiment, id, rev], "_")))
@@ -40,14 +34,24 @@ function prepare_plot(res; baseline = :self, baselinemodel = :ReplayAndPlan)
         idxs = baseline.model .== baselinemodel
         best.logp_hat_rel = best.logp_hat .- repeat(baseline.logp_hat[idxs], nmodels)
         best.logp_hat_std_rel = sqrt.(best.logp_hat_std.^2 .+ repeat(baseline.logp_hat_std[idxs], nmodels).^2)
-        best.logp_hat_std_rel[idxs] .= 0
+        if best == baseline
+            best.logp_hat_std_rel[idxs] .= 0
+        end
         groups = groupby(best[(baseline == best ? best.model .!= baselinemodel : :), :], :model)
         y = [g.logp_hat_rel for g in groups]
-        err = [g.logp_hat_std_rel ./ sqrt.(g.rep) for g in groups]
+        err = if hasproperty(best, :rep)
+            [g.logp_hat_std_rel ./ sqrt.(g.rep) for g in groups]
+        else
+            nothing
+        end
     else
         groups = groupby(best, :model)
         y = [g.logp_hat for g in groups]
-        err = [g.logp_hat_std ./ sqrt.(g.rep) for g in groups]
+        err = if hasproperty(best, :rep)
+            [g.logp_hat_std ./ sqrt.(g.rep) for g in groups]
+        else
+            nothing
+        end
     end
     (best = best, groups = groups, y = y, err = err)
 end
