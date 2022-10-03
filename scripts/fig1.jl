@@ -2,14 +2,6 @@ using Pkg
 Pkg.activate(joinpath(@__DIR__, ".."))
 using PGFPlotsX, BSON, CodecZstd, DataFrames
 
-push!(PGFPlotsX.CUSTOM_PREAMBLE, raw"""
-\usepackage{xcolor}
-\definecolor{mblue}{HTML}{0992F2}
-\definecolor{morange}{HTML}{ff7f0e}
-\definecolor{mgreen}{HTML}{2ca02c}
-\definecolor{mred}{HTML}{d62728}
-""")
-
 include(joinpath(@__DIR__, "utils.jl"))
 
 res = loadresult(isempty(ARGS) ? "run_indi.bson.zstd" : ARGS[1])
@@ -22,6 +14,17 @@ nr = prepare_plot(resnew; baseline = best);
 
 resnew2 = loadresult("run_nomodulation_8918427.bson.zstd");
 nr2 = prepare_plot(resnew2; baseline = best);
+
+resnew3 = loadresult("run_cachemodulatedcaching.bson.zstd")
+nr3 = prepare_plot(resnew3, baseline = best);
+
+cols = [:experiment, :logp_hat]
+comparebest = leftjoin(best[best.model .== :PlasticCaching, [cols; :logp_hat_std; :logp_hat_rel]],
+                       nr3.best[:, cols], on = :experiment, makeunique = true)
+comparebest = leftjoin(comparebest, nr.best[:, cols], on = :experiment, makeunique = true)
+comparebest.d1 = comparebest.logp_hat_1 - comparebest.logp_hat
+comparebest.d2 = comparebest.logp_hat_2 - comparebest.logp_hat
+comparebest.d3 = comparebest.logp_hat_2 - comparebest.logp_hat_1
 
 pe = 1:11
 me = 12:17

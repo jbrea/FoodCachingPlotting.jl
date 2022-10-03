@@ -208,9 +208,7 @@ version = "0.1.0"
 
 [[FoodCachingModels]]
 deps = ["DataFrames", "Distributed", "Distributions", "FoodCachingExperiments", "NestedStructInitialiser", "RuntimeGeneratedFunctions", "Unitful"]
-git-tree-sha1 = "7d56a25b1126f504dc631054e8bd5da327a71085"
-repo-rev = "master"
-repo-url = "https://github.com/jbrea/FoodCachingModels.jl"
+path = "../FoodCachingModels"
 uuid = "1c4db5f1-e6ab-45d4-a5c5-b1bf60220e94"
 version = "0.1.0"
 
@@ -247,10 +245,10 @@ uuid = "708ec375-b3d6-5a57-a7ce-8257bf98657a"
 version = "0.8.0"
 
 [[Gumbo_jll]]
-deps = ["Libdl", "Pkg"]
-git-tree-sha1 = "86111f5523d7c42da0edd85ef7999c663881ac1e"
+deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
+git-tree-sha1 = "89baea4583316379413109fe88c290b19c990f86"
 uuid = "528830af-5a63-567c-a44a-034ed33b8444"
-version = "0.10.1+1"
+version = "0.10.1+2"
 
 [[HCubature]]
 deps = ["Combinatorics", "DataStructures", "LinearAlgebra", "QuadGK", "StaticArrays"]

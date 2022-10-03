@@ -6,6 +6,7 @@ import FoodCachingExperiments: EXPERIMENTS, bsave, bload
 
 
 function plot_sigresults(sigresults;
+                         ylabel = "reproduced significant p-values in \\%",
                          measure = :ratio_same_rejects_mean)
     tmp = combine(groupby(sigresults, [:model, :experiment]),
                   [:samebinarysignificance, :meansamebinarysigA,
@@ -23,18 +24,24 @@ function plot_sigresults(sigresults;
     ce = 28
     reverse(x) = 32 - x
     xtick = reverse.([pe; me .+ 1; se .+ 2; ce .+ 3])
-    f1 = @pgf Axis({xtick = xtick, xticklabels = toname.(groups[1].experiment),
-               xticklabel_style = {rotate = 60, anchor = "east"},
-               width = "16cm", height = "6cm",
+    f1 = @pgf Axis({xtick = 32:-1:1, xticklabels = (toname.(groups[1].experiment)|>
+                         l -> insert!(l, 28, "") |> l -> insert!(l, 23, "") |>
+                         l -> insert!(l, 12, "")),
+               ylabel = ylabel,
+               xticklabel_style = {xshift = "-.5mm", rotate = 60, anchor = "east"},
+               width = "16cm", height = "6cm", xmin = .5, xmax = 32.5,
+               grid = "major", axis_line_style = "{draw = white}",
+               legend_entries = "{Planning-By-Replay, Plastic Caching, No-Plasticity, No-Plasticity-No-Memory, No-Plasticity-No-Memory-No-Motivational-Control}", legend_columns="{3}", font="{\\scriptsize}",
+                "every axis legend/.append style={at={{(0.01, 1)}}, anchor={south west}}",
                cycle_list = [
-                             "{thick, morange, mark = square}",
-                             "{thick, mred, mark = square}",
-                             "{thick, mblue, mark = square}",
-                             "{thick, mgreen, mark = square}",
-                             "{thick, gray!60!black, mark = square}"
+                             "{thick, morange, mark = *, mark options = {fill = white}}",
+                             "{thick, mred, mark = *, mark options = {fill = white}}",
+                             "{thick, mblue, mark = *, mark options = {fill = white}}",
+                             "{thick, mgreen, mark = *, mark options = {fill = white}}",
+                             "{thick, gray!60!black, mark = *, mark options = {fill = white}}"
                             ],
               },
-              [Plot(Coordinates(xtick, y)) for y in ys]...)
+                   [Plot(Coordinates(xtick .+ (i)/(length(ys) + 1), 100*y)) for (i, y) in pairs(ys)]...)
 
     f2 = @pgf Axis({cycle_list = [
                                  "{thick, mark = square*, dotted, mark size = 3,
@@ -72,8 +79,14 @@ bsave(joinpath(datapath, "sigresults1"), Dict(:sigresults1 => sigresults1))
 sigresults10 = run_sigtests(best, Ninner = 10, Nouter = 50)
 bsave(joinpath(datapath, "sigresults10"), Dict(:sigresults10 => sigresults10))
 
+sigresults1 = bload(joinpath(datapath, "sigresults1"))[:sigresults1]
+sigresults10 = bload(joinpath(datapath, "sigresults10"))[:sigresults10]
+
 p1indi, p1all = plot_sigresults(sigresults1)
 p10indi, p10all = plot_sigresults(sigresults10)
 
+combine(groupby(sigresults10, :model), :samebinarysignificance => mean)
+
 pgfsave(joinpath(figpath, "sig_summary_all1.tikz"), p1all)
 pgfsave(joinpath(figpath, "sig_summary_all10.tikz"), p10all)
+pgfsave(joinpath(figpath, "sig_summary_indi10.tikz"), p10indi)

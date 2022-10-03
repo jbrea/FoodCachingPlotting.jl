@@ -367,7 +367,7 @@ function preprocess(field, t, v, foodtypes)
     elseif field ∈ (:eatableitems, :cacheableitems)
         [(t, FoodCachingModels.countfooditems.(v, f), "$field $f")
          for f in foodtypes]
-    elseif field ∈ (:hunger, :stomach)
+    elseif field ∈ (:hunger, :stomach, :cachemotivation)
         [(t, getindex.(v, i), "$field $(foodtypes[i])")
          for i in eachindex(foodtypes)]
     elseif field == :trays
@@ -384,7 +384,7 @@ function preprocess(field, t, v, foodtypes)
 end
 function traces(model; timeunit = 1.0u"hr")
     data = model.tracker.data
-    foodtypes = union((x -> x.id).(vcat(data[:eatableitems].v...)))
+    foodtypes = union((x -> x.id).([vcat(data[:eatableitems].v...); vcat(data[:cacheableitems].v...)]))
     plotsdict = Dict()
     for (field, x) in data
         plotsdict[field] = preprocess(field,

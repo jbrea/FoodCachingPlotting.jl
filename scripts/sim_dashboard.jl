@@ -13,9 +13,8 @@ Base.@kwdef mutable struct Model <: ReactiveModel
     filter::R{String} = ""
     seed::R{String} = "random"
     models::Vector{Any} = []
-    list::R{String} = ""
     layout::R{Any} = nothing
-    plot_data::R{Any} = nothing
+    plot_data::R{Vector{PlotData}} = []
     dist_layout::R{Any} = nothing
     dist_plots::R{Any} = nothing
     summary1_layout::R{Any} = PlotlyJS.Layout(height = 10, width = 10)
@@ -77,10 +76,8 @@ Base.@kwdef mutable struct Model <: ReactiveModel
     opt_models::Vector{String} = ["Baseline", "MotivationalControl",
                                   "EpisodicLikeMemory", "PlasticCaching",
                                   "ReplayAndPlan"]
-    commit::R{String} = ""
-    opt_commit::R{Vector{String}} = [""]
-    id::R{String} = ""
-    opt_id::R{Vector{String}} = [""]
+    file::R{String} = ""
+    opt_file::R{Vector{String}} = [""]
 end
 
 function updatefiles(model, dir)
@@ -117,6 +114,9 @@ function default_trackedfields(p)
     if haskey(pd, :cacheparams) && pd[:cacheparams] <: M.PlasticCachingAgentParams
         push!(res, (:agent, :cacheparams, :trayweights))
     end
+    if pd[:hungermodel] <: M.Hunger{M.CacheModulatedCaching}
+        push!(res, (:agent, :hungermodel, :cachemodulation, :cachemotivation))
+    end
     res
 end
 
@@ -126,19 +126,16 @@ function parse_seed(seed)
     parse(UInt, seed)
 end
 
-stringify(x) = x == "" ? "" : "_$x"
-function setfilename()
-    f = "$(model.model[])_$(model.experiment[])$(stringify(model.id[]))$(stringify(model.commit[])).bson.zstd"
-    if f ∈ model.files[]
-        model.list[] = f
-    end
+function to_plotdata(x)
+    PlotData(; filter(x -> x.first ∉ (:type, :xaxis), x.fields)...)
 end
-
 function plot_bird(ms, id)
     println("plotting bird $id")
     tmp = FoodCachingPlotting.plotexperiment(ms[id])
+    model.plot_data[] = to_plotdata.(filter(x -> !any(ismissing.(x.fields[:y])), tmp.plot.data))
     model.layout[] = tmp.plot.layout
-    model.plot_data[] = tmp.plot.data
+#     model.plot_data[] = [PlotData(; filter(e -> first(e) != :type, d.fields)...)
+#                          for d in tmp.plot.data]
 end
 
 function titles(m)
@@ -146,7 +143,7 @@ function titles(m)
           for (k, v) in m.p.free]...)
 end
 
-function plot_dists(m; x = 0:.01:1)
+function plot_dists(m; x = 0.01:.01:.99)
     n = length(m.m)
     n1 = ceil(Int, sqrt(n))
     n2 = ceil(Int, n / n1)
@@ -159,10 +156,12 @@ function plot_dists(m; x = 0:.01:1)
                                                         pattern = "independent"),
                                            showlegend = false,
                                            height = 900,
-                                           xaxis...)
+                                           xaxis...
+                                          )
     model.dist_plots[] = [PlotData(x = (u - l) * x .+ l,
                                    y = M.Distributions.pdf(m.dist(d, s), x),
-                                   yaxis = "y$i", xaxis = "x$i")
+                                   yaxis = "y$i", xaxis = "x$i"
+                                  )
                           for (i, u, l, d, s) in zip(1:length(m.u), m.u, m.l, m.m, m.s)]
 end
 
@@ -180,7 +179,6 @@ end
 
 model = Stipple.init(Model())
 
-updatefiles(model, model.datadir[])
 
 on(model.birdid) do id
     isempty(id) || plot_bird(model.models, id)
@@ -190,11 +188,24 @@ on(model.datadir) do dir
     updatefiles(model, dir)
 end
 
+function filter_files()
+    updatefiles(model, model.datadir[])
+    model.opt_file[] = filter(x -> match(Regex(model.model[]), x) !== nothing &&
+                                 match(Regex(model.experiment[]), x) !== nothing,
+                            model.files[])
+end
+
+on(model.model) do _
+    filter_files()
+end
+on(model.experiment) do _
+    filter_files()
+end
+
 on(model.plot) do plot
     println("plot changed $plot")
     plot || return
-    setfilename()
-    f = model.list[]
+    f = model.file[]
     println("Loading $f ...")
     m = load(joinpath(model.datadir[], f))
     plot_dists(m)
@@ -223,11 +234,8 @@ function ui()
                    h6("experiment"),
                    quasar(:select, "", @bind(:experiment), options = :opt_experiment)]),
               cell(class = "st-module", [
-                   h6("commit"),
-                   quasar(:select, "", @bind(:commit), options = :opt_commit)]),
-              cell(class = "st-module", [
-                   h6("id"),
-                   quasar(:select, "", @bind(:id), options = :opt_id)]),
+                   h6("file"),
+                   quasar(:select, "", @bind(:file), options = :opt_file)]),
               cell(class = "st-module", [
                    h6("bird"),
                    quasar(:select, "", @bind(:birdid), options = :birdid_options)]),
