@@ -14,20 +14,20 @@ sort!(results, :logp_hat)
 best = combine(groupby(results, [:model, :experiment]),
                names(results) .=> x -> [last(x)], renamecols = false)
 
-# n = 0
-# for row in eachrow(best)
-#     @show row.model row.experiment
-#     f = plot_compare(row.experiment, row.avg, row.best, backend = :pgf)
-#     if row.experiment == :Clayton0103
-#         for (ei, fi) in zip(CLAYTON0103_EXPERIMENTS, f)
-#             n += length(filter(x -> isa(x, TikzPicture), fi.elements)) ÷ 3
-# #             pgfsave(joinpath(figpath, "$(row.model)_$(ei).tikz"), fi)
-#         end
-#     else
-#         n += length(filter(x -> isa(x, TikzPicture), f.elements)) ÷ 3
-# #         pgfsave(joinpath(figpath, "$(row.model)_$(row.experiment).tikz"), f)
-#     end
-# end
+n = 0
+for row in eachrow(best)
+    @show row.model row.experiment
+    f = plot_compare(row.experiment, row.avg, row.best, backend = :pgf)
+    if row.experiment == :Clayton0103
+        for (ei, fi) in zip(CLAYTON0103_EXPERIMENTS, f)
+            n += length(filter(x -> isa(x, TikzPicture), fi.elements)) ÷ 3
+            pgfsave(joinpath(figpath, "$(row.model)_$(ei).tikz"), fi)
+        end
+    else
+        n += length(filter(x -> isa(x, TikzPicture), f.elements)) ÷ 3
+        pgfsave(joinpath(figpath, "$(row.model)_$(row.experiment).tikz"), f)
+    end
+end
 
 ###
 ### Appendix document
@@ -35,7 +35,7 @@ best = combine(groupby(results, [:model, :experiment]),
 
 length_without_missing(x) = sum(1 .- ismissing.(x))
 process_testval(val) = match(r"[0-9.]", string(val[1])) !== nothing ? "=" * val : val
-texstring(s) = reduce(replace, ["_" => " ", "&" => "\\&", "×" => "\$\\times\$"], init = string(s))
+texstring(s) = reduce(replace, ["_" => " ", "&" => "\\&", "×" => "\$\\times\$", "Western Scrub Jays" => "California scrub-jays", "Jays" => "jays"], init = string(s))
 figstring(m, s) = "\\begin{center}\\textbf{$(modelname(m))}\\end{center}\\input{$(m)_$s.tikz}"
 function modelname(m)
     m == "ReplayAndPlan" && return raw"\mplan{}"
