@@ -47,6 +47,7 @@ function plotdf(::Val{:pgf}, df, x, y; yerr, group, kwargs...)
                legend_style = {draw = "none", very_thick},
                "error bars/error mark options = {very thick, mark size = 3}",
                grid = "major", tick_style = "gray!50",
+               ylabel = "items",
                "error bars/y explicit",
                "error bars/y dir=both"}), Options(kwargs...))
     Axis(options,
@@ -187,7 +188,7 @@ function plot_experiment(::Experiment{:deKort05}, data; kwargs...)
      plotdf(@select(@where(data, :set .== 8), :group, :RI, :set, :firstinspection),
             :RI, :firstinspection;
             ymin = 0, ymax = 1, xtick = [4, 28],
-            ytick = [0, 1], ylabel = "f.i. waxworm", kwargs...)]
+            ytick = [0, 1], ylabel = "first inspection waxworm", kwargs...)]
 end
 
 plot_experiment(::Experiment{:Correia07_exp1}, data; kwargs...) =
@@ -218,7 +219,7 @@ function plot_experiment(::Experiment{:Clayton99B_exp1}, data; kwargs...)
      plotdf(@select(@where(data, :trial .== 5,
                            :action .== "inspect", :foodtype .== "peanut"),
                     :group, :RI, :firstinspection),
-            :RI, :firstinspection; ylabel = "f.i. peanut", ymin = 0, ymax = 1,
+            :RI, :firstinspection; ylabel = "first inspection peanut", ymin = 0, ymax = 1,
             kwargs...)]
 end
 
@@ -229,7 +230,7 @@ function plot_experiment(::Experiment{:Clayton99B_exp2}, data; kwargs...)
      plotdfgroupby(@select(@where(data, :action .== "inspect", :foodtype .== "peanut"),
                            :group, :trial, :order, :firstinspection),
                    [:trial], :order, :firstinspection;
-                   ylabel = "f.i. peanuts", ymin = 0, ymax = 1, kwargs...)]
+                   ylabel = "first inspection peanuts", ymin = 0, ymax = 1, kwargs...)]
 end
 
 plot_experiment(::Experiment{:Clayton99C_exp1}, data; kwargs...) =
@@ -249,12 +250,12 @@ function plot_experiment(::Experiment{:Clayton01_exp1}, data; kwargs...)
      plotdfgroupby(@select(@where(data, :foodtype .== "peanut",
                                   :action .== "inspect", 0 .< :set .<= 6),
                            :group, :RI, :trial, :set, :firstinspection),
-                   :RI, :set, :firstinspection; ylabel = "f.i. peanut",
+                   :RI, :set, :firstinspection; ylabel = "first inspection peanut",
                    ymin = 0, ymax = 1, kwargs...);
      plotdf(@select(@where(data, :foodtype .== "other", :action .== "inspect",
                            :set .> 4, :trial .== "pc"),
                     :group, :RI, :firstinspection),
-            :RI, :firstinspection; ylabel = "f.i. cricket",
+            :RI, :firstinspection; ylabel = "first inspection cricket",
             ymin = 0, ymax = 1, kwargs...);
     ]
 end
@@ -267,7 +268,7 @@ function plot_experiment(::Experiment{:Clayton01_exp2}, data; kwargs...)
                            :action .== "inspect", :set .== 6),
                     :group, :RI, :trial, :set, :firstinspection),
             :RI, :firstinspection;
-            ylabel = "f.i. mealworm", ymin = 0, ymax = 1, kwargs...)]
+            ylabel = "first inspection mealworm", ymin = 0, ymax = 1, kwargs...)]
 end
 
 function plot_experiment(::Experiment{:Clayton01_exp3}, data; kwargs...)
@@ -281,7 +282,7 @@ function plot_experiment(::Experiment{:Clayton01_exp3}, data; kwargs...)
     ps[3] = plotdf(@select(@where(data, :foodtype .== "mealworm",
                                   :action .== "inspect"),
                            :group, :trial, :firstinspection),
-                   :trial, :firstinspection; ylabel = "f.i. mealworm",
+                   :trial, :firstinspection; ylabel = "first inspection mealworm",
                    ymin = 0, ymax = 1, kwargs...)
     ps
 end
@@ -294,7 +295,7 @@ function plot_experiment(::Experiment{:Clayton01_exp4}, data; kwargs...)
     ps[2] = plotdf(@select(@where(data, :foodtype .== "peanut",
                                   :action .== "inspect"),
                            :group, :RI, :firstinspection),
-                   :RI, :firstinspection; ylabel = "f.i. peanut",
+                   :RI, :firstinspection; ylabel = "first inspection peanut",
                    ymin = 0, ymax = 1, kwargs...)
     ps
 end
@@ -304,12 +305,12 @@ function plot_experiment(::Experiment{:Clayton03_exp1}, data; kwargs...)
     ps[1] = plotdf(@select(@where(data, :foodtype .== "other", :action .== "inspect",
                            :set .> 4, :trial .== "pc"),
                     :group, :RI, :firstinspection),
-            :RI, :firstinspection; ylabel = "f.i. cricket",
+            :RI, :firstinspection; ylabel = "first inspection cricket",
             ymin = 0, ymax = 1, kwargs...)
     ps[2] = plotdf(@select(@where(dropmissing(data, :foodtype, disallowmissing = true),
                            :foodtype .== "cricketproportion"),
                     :group, :RI, :μ, :sem),
-            :RI; ylabel = "f.i. cricket", ymin = 0, ymax = 1, kwargs...)
+            :RI; ylabel = "first inspection cricket", ymin = 0, ymax = 1, kwargs...)
     ps
 end
 
@@ -319,7 +320,7 @@ function plot_experiment(exp::Experiment{:Clayton03_exp2}, data; kwargs...)
                   [:group, :RI], :foodtype; kwargs...);
      plotdfgroupby(@select(@where(data, :action .== "inspect", :foodtype .== "peanut"),
                            :group, :condition, :RI, :firstinspection),
-                   [:group], :RI, :firstinspection; ylabel = "f.i. crickets",
+                   [:group], :RI, :firstinspection; ylabel = "first inspection crickets",
                    ymin = 0, ymax = 1, kwargs...);
      plotdf(@select(@where(data, :action .== "cache"),
                     :group, :foodtype, :μ, :sem),
