@@ -31,11 +31,16 @@ function prepare_plot(res; baseline = :self, baselinemodel = :ReplayAndPlan)
     if baseline != :none
         baseline = baseline == :self ? best : baseline
         nmodels = length(union(best.model))
-        idxs = baseline.model .== baselinemodel
-        best.logp_hat_rel = best.logp_hat .- repeat(baseline.logp_hat[idxs], nmodels)
-        best.logp_hat_std_rel = sqrt.(best.logp_hat_std.^2 .+ repeat(baseline.logp_hat_std[idxs], nmodels).^2)
-        if best == baseline
-            best.logp_hat_std_rel[idxs] .= 0
+        if baselinemodel == :self
+            best.logp_hat_rel = best.logp_hat .- baseline.logp_hat
+            best.logp_hat_std_rel = sqrt.(best.logp_hat_std.^2 .+ baseline.logp_hat_std.^2)
+        else
+            idxs = baseline.model .== baselinemodel
+            best.logp_hat_rel = best.logp_hat .- repeat(baseline.logp_hat[idxs], nmodels)
+            best.logp_hat_std_rel = sqrt.(best.logp_hat_std.^2 .+ repeat(baseline.logp_hat_std[idxs], nmodels).^2)
+            if best == baseline
+                best.logp_hat_std_rel[idxs] .= 0
+            end
         end
         groups = groupby(best[(baseline == best ? best.model .!= baselinemodel : :), :], :model)
         y = [g.logp_hat_rel for g in groups]
