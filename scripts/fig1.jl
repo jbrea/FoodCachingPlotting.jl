@@ -11,6 +11,7 @@ best, groups, y, err = prepare_plot(res; baseline)
 
 REV1 = "be96fd7" # new results
 REV2 = "f5ec1d5" # with maxN = 2000
+REV3 = "01135d8" # new CacheModulatedCaching2
 resnew = vcat(loadresult("run_HungermodulatedCaching_$REV1.bson.zstd"),
               loadresult("run_HungermodulatedCaching_$REV2.bson.zstd"));
 nr = prepare_plot(resnew; baseline = best);
@@ -22,6 +23,10 @@ nr2 = prepare_plot(resnew2; baseline = nr.best, baselinemodel = :self);
 resnew3 = vcat(loadresult("run_CachemodulatedCaching_$REV1.bson.zstd"),
                loadresult("run_CachemodulatedCaching_$REV2.bson.zstd"))
 nr3 = prepare_plot(resnew3, baseline = nr.best, baselinemodel = :self);
+
+resnew6 = vcat(loadresult("run_CacheModulatedCaching2_$REV3.bson.zstd")[:, ["model", "experiment", "logp_hat", "logp_hat_std"]],
+               loadresult("run_CacheModulatedCaching2_COPY.bson.zstd")) # for MotivationalControl Clayton99C exp2 the optimizer did not find a good result, but copying parameters from the hungermodulated fit works.
+nr6 = prepare_plot(resnew6, baseline = nr.best[nr.best.experiment .∈ Ref(union(resnew6.experiment)), :], baselinemodel = :self);
 
 resnew4 = loadresult("run_unmodulatedcachingX.bson.zstd")
 nr4 = prepare_plot(resnew4, baseline = best);
@@ -99,9 +104,9 @@ if length(ARGS) < 1
     ys = vcat(fill(eps(), 4)', ys) # to see something on the plot
 end
 cycle_list = collect(Iterators.reverse(["",
-                                        "{thick, dotted, mark = square*, mark options = {solid, fill = white}, }",
-                                        "{thick, dashed, mark = diamond*, mark options = {solid}, fill = white}",
-                                        "{thick, solid, mark = triangle*, mark options = {fill = white}}"]))
+                                        "{thick, dotted, mark = none, mark options = {solid, fill = white}, }",
+                                        "{thick, dashed, mark = none, mark options = {solid}, fill = white}",
+                                        "{thick, solid, mark = none, pattern = crosshatch}"]))
 f2 = @pgf Axis({ybar_stacked, xtick = 1:5, font = raw"\scriptsize",
                 xmin = 0.5, xmax = 5.5,
                 height = "6cm", width = "3.8cm",
@@ -120,10 +125,18 @@ f2 = @pgf Axis({ybar_stacked, xtick = 1:5, font = raw"\scriptsize",
 
 pgfsave(joinpath(figpath, "logp_hat_rel_summary_all.tikz"), f2)
 
-f3 = plot_logp_hat(nr2.y, nr2.err, ymin = -50, ymax = 5, xmin = 2.5, xmax = 8.5,
+f3 = plot_logp_hat(nr2.y, nr2.err, ymin = -50, ymax = 20, xmin = 2.5, xmax = 8.5,
                    width = "4cm", legend_entries = [legend_entries[1:3]; "hunger-modulated caching"]);
 f3.options["legend_to_name"] = "alt-mod-legend"
-f4 = plot_logp_hat(nr3.y, nr3.err, ymin = -25, ymax = 20, xmin = 2.5, xmax = 8.5,
+f4 = plot_logp_hat(nr3.y, nr3.err, ymin = -50, ymax = 20, xmin = 2.5, xmax = 8.5,
                    width = "4cm", legend_entries = []);
 pgfsave(joinpath(figpath, "logp_hat_rel_unmodcaching.tikz"), f3)
 pgfsave(joinpath(figpath, "logp_hat_rel_cachemodcaching.tikz"), f4)
+
+# push dummy
+tmpy = [[fill(0, 17); y; 0] for y in nr6.y]
+tmperr =fill(fill(0, 23), 3)
+f5 = plot_logp_hat(tmpy, tmperr, ymin = -50, ymax = 20, xmin = 2.5, xmax = 8.5,
+                   width = "4cm", legend_entries = []);
+f5
+pgfsave(joinpath(figpath, "logp_hat_rel_cachemodcaching2.tikz"), f5)
